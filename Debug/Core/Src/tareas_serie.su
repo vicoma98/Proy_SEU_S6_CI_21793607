@@ -1,6 +1,6 @@
 tareas_serie.c:33:6:serie_Init_FreeRTOS	24	static
 tareas_serie.c:76:5:funcion_conf	40	static
 tareas_serie.c:92:6:entregable	400	dynamic
-tareas_serie.c:134:6:postfunc	160	static
-tareas_serie.c:188:6:Task_Send	136	static
-tareas_serie.c:208:6:Task_Receive	168	static
+tareas_serie.c:134:6:postfunc	152	static
+tareas_serie.c:185:6:Task_Send	136	static
+tareas_serie.c:205:6:Task_Receive	168	static

@@ -21,9 +21,11 @@ extern UART_HandleTypeDef huart1;
 #define UART_ESP_AT_WIFI (&huart1)
 #define UART_ESP8266 (&huart1)
 
-char post_temp[]="POST  /v1/queryContext HTTP/1.1\r\nAccept: text/html\r\nHost: pperez-seu-or.disca.upv.es\r\nContent-Legth: %d\r\n\r\n%d";
+char post_temp[]="POST /v1/queryContext HTTP/1.1\r\nContent-Type: application/json\r\nAccept: application/json\r\nHost: pperez-seu-or.disca.upv.es\r\nContent-Length: %d\r\n\r\n%s";
+char post_temp_apli[]="POST /v1/updateContext HTTP/1.1\r\nContent-Type:application/json\r\nAccept: application/json\r\nHost: pperez-seu-or.disca.upv.es\r\nContent-Length: %d\r\n\r\n%s";
 char identificador[]="Sensor_SEU_S6_VCM06";
 char body []="{\"entities\":[{\"type\":\"Sensor\",\"isPattern\":\"false\",\"id\":\"Sensor_SEU_S6_VCM06\"}]}";
+char body_update []="{\"contextElements\":[{\"type\": \"Sensor\", \"isPattern\": \"false\",\"id\": \"SensorSEU_SEU_PPB35\",\"attributes\": [{\"name\": \"LEDS\",\"type\": \"binary\",\"value\": \"10001000\"}]}],\"updateAction\": \"APPEND\"}";
 char cadenafinalv2[1000];
 
 
@@ -146,24 +148,21 @@ void postfunc(char * nombreMaquina,char * ssid, char * passwd, char * puerto){
 	int r4 = funcion_conf(candenafinal,strlen(candenafinal),500,1000);
 
 		//***post***
-		sprintf(candenafinal,post_temp,strlen(body),body);
+		sprintf(candenafinal,post_temp,strlen(body),&body);
 		char cad4[]="AT+CIPSEND=%d\r\n";
 		sprintf(cadenafinalv2,cad4,strlen(candenafinal));
-		int r5 = funcion_conf(cadenafinalv2,strlen(cadenafinalv2),500,2000);
 
 
+		int r5 = funcion_conf(cadenafinalv2,strlen(cadenafinalv2),1000,2000);
+		int r6 = funcion_conf(candenafinal,strlen(candenafinal),500,20);
+/*
+		printf("*********************\r\n");
+		printf(candenafinal);
+		printf("*********************\r\n");
 
-		HAL_UART_Receive_DMA(UART_ESP8266, buffer_DMA,2048);
-		res=HAL_UART_Transmit(UART_ESP_AT_WIFI,candenafinal,strlen(candenafinal),1000);
-		osDelay(500);
-		HAL_UART_DMAStop(UART_ESP_AT_WIFI);
-		int buffer_ct1=buffer_DMA_size - HAL_DMA_getcounter(UART_ESP_AT_WIFI);
-		int buffer_ct=0;
-		while (buffer_ct<buffer_ct1)
-			res=buff->put(buff,buffer_DMA[buffer_ct++]);
-		osDelay(20);
+
 		//tratado del json
-		/*char *jsonp=strstr(buffer_DMA,"{");
+		char *jsonp=strstr(buffer_DMA,"{");
 		jsonp[strlen(jsonp)-2]='\0';
 		//meter en struct para poder funcionar
 		const cJSON *fecha = NULL;
