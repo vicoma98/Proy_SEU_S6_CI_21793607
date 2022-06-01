@@ -21,11 +21,48 @@ extern UART_HandleTypeDef huart1;
 #define UART_ESP_AT_WIFI (&huart1)
 #define UART_ESP8266 (&huart1)
 
-char post_temp[]="POST /v1/queryContext HTTP/1.1\r\nContent-Type: application/json\r\nAccept: application/json\r\nHost: pperez-seu-or.disca.upv.es\r\nContent-Length: %d\r\n\r\n%s";
-char post_temp_apli[]="POST /v1/updateContext HTTP/1.1\r\nContent-Type:application/json\r\nAccept: application/json\r\nHost: pperez-seu-or.disca.upv.es\r\nContent-Length: %d\r\n\r\n%s";
+char post_temp[]="POST /v1/queryContext HTTP/1.1\r\n"
+		"Content-Type: application/json\r\n"
+		"Accept: application/json\r\n"
+		"Host: pperez-seu-or.disca.upv.es\r\n"
+		"Content-Length: %d\r\n\r\n%s";
+char post_temp_apli[]="POST /v1/updateContext HTTP/1.1\r\n"
+		"Content-Type: application/json\r\n"
+		"Accept: application/json\r\n"
+		"Host: pperez-seu-or.disca.upv.es\r\n"
+		"Content-Length: %d\r\n"
+		"\r\n"
+		"%s";
 char identificador[]="Sensor_SEU_S6_VCM06";
-char body []="{\"entities\":[{\"type\":\"Sensor\",\"isPattern\":\"false\",\"id\":\"Sensor_SEU_S6_VCM06\"}]}";
-char body_update []="{\"contextElements\":[{\"type\": \"Sensor\", \"isPattern\": \"false\",\"id\": \"SensorSEU_SEU_PPB35\",\"attributes\": [{\"name\": \"LEDS\",\"type\": \"binary\",\"value\": \"10001000\"}]}],\"updateAction\": \"APPEND\"}";
+char body []="{"
+		"\"entities\":"
+			"["
+				"{\""
+					"type\":\"Sensor\","
+					"\"isPattern\":\"false\","
+					"\"id\":\"Sensor_SEU_S6_VCM06\""
+				"}"
+			"]"
+		"}";
+char body_update []="{"
+			"\"contextElements\":"
+			"["
+				"{"
+				"\"type\": \"Sensor\","
+				" \"isPattern\": \"false\","
+				"\"id\": \"Sensor_SEU_S6_VCM06\","
+				"\"attributes\": "
+					"["
+						"{"
+							"\"name\": \"LEDS\","
+							"\"type\": \"binary\","
+							"\"value\": \"10001000\""
+						"}"
+					"]"
+				"}"
+			"],"
+		"\"updateAction\": \"APPEND\""
+		"}";
 char cadenafinalv2[1000];
 
 
@@ -74,8 +111,8 @@ void serie_Init_FreeRTOS(void){
 	}
 }
 
-char candenafinal[100];
-int funcion_conf(char * cadena[],int * len,int * osDelay_, int * osDelay_2){
+char candenafinal[2000];
+int funcion_conf(char * cadena,int len,int  osDelay_, int  osDelay_2){
 	int vuelta=1;
 	uint32_t res;
 	res=HAL_UART_Transmit(UART_ESP_AT_WIFI,cadena,len,1000);
@@ -148,39 +185,48 @@ void postfunc(char * nombreMaquina,char * ssid, char * passwd, char * puerto){
 	int r4 = funcion_conf(candenafinal,strlen(candenafinal),500,1000);
 
 		//***post***
-		sprintf(candenafinal,post_temp,strlen(body),&body);
+		//sprintf(candenafinal,post_temp,strlen(body),&body);
+		sprintf(candenafinal,post_temp_apli,strlen(body_update),&body_update);
 		char cad4[]="AT+CIPSEND=%d\r\n";
-		sprintf(cadenafinalv2,cad4,strlen(candenafinal));
-
-
-		int r5 = funcion_conf(cadenafinalv2,strlen(cadenafinalv2),1000,2000);
-		int r6 = funcion_conf(candenafinal,strlen(candenafinal),500,20);
-/*
+		sprintf(cadenafinalv2,cad4,strlen(candenafinal));/*
 		printf("*********************\r\n");
 		printf(candenafinal);
-		printf("*********************\r\n");
+		printf("\r\n*********************\r\n");*/
+
+		int r5 = funcion_conf(cadenafinalv2,strlen(cadenafinalv2),500,20);//send=de bytes
+		int r6 = funcion_conf(candenafinal,strlen(candenafinal),500,20);//json peticion
+
+		sprintf(candenafinal,post_temp,strlen(body),&body);
+		sprintf(cadenafinalv2,cad4,strlen(candenafinal));
+		int r7 = funcion_conf(cadenafinalv2,strlen(cadenafinalv2),1000,2000);
+
+		/*printf("*********************\r\n");
+		printf(candenafinal);
+		printf("\r\n*********************\r\n");*/
+		int r8 = funcion_conf(candenafinal,strlen(candenafinal),1000,2000);
+
+
+
+
+
 
 
 		//tratado del json
 		char *jsonp=strstr(buffer_DMA,"{");
 		jsonp[strlen(jsonp)-2]='\0';
-		//meter en struct para poder funcionar
-		const cJSON *fecha = NULL;
-		cJSON * jsonB = cJSON_Parse(jsonp);
-		fecha = cJSON_GetObjectItemCaseSensitive(jsonB, "currentDateTime");
-		char* fechaSTR= fecha->valuestring;
-		struct tm hora;
-		char *format = "%Y-%Om-%dT%H:%M%z";
-		strptime(fechaSTR, format, &hora);
-		//bucle de printeo
-		while(1){
-			hora.tm_sec+=2;
-			mktime(&hora);
-			char hora2[100];
-			strftime(hora2,100,"%Y-%Om-%d %H:%M:%S\r\n",&hora);
-			res=buff->puts(buff,(BUFF_ITEM_t *)hora2,strlen(hora2));
-			vTaskDelay(2000/portTICK_RATE_MS );
-		}*/
+		cJSON *contextResponses=cJSON_Parse(jsonp);
+		cJSON * contextEl = cJSON_GetObjectItemCaseSensitive(contextResponses,"contextResponses");
+		cJSON * array1 = cJSON_GetArrayItem(contextEl,0);
+		cJSON * contextElement = cJSON_GetObjectItemCaseSensitive(array1,"contextElement");
+		cJSON * atributes = cJSON_GetObjectItemCaseSensitive(contextElement,"attributes");
+		cJSON * atributo =  cJSON_GetArrayItem(atributes,0);
+		cJSON * values = cJSON_GetObjectItemCaseSensitive(atributo,"value");
+		char* leds= values->valuestring;
+		printf("\r\n*********************\r\n");
+		printf(leds);
+		printf("\r\n*********************\r\n");
+
+
 }
 
 
@@ -194,14 +240,14 @@ void Task_Send( void *pvParameters ){
 	//boot_wifi("OPPOReno2","ilovematy");
 	//entregable("worldclockapi.com","OPPOReno2","ilovematy","80");
 	//postfunc("pperez-seu-or.disca.upv.es","routerSEU","00000000","10000");
-	postfunc("imaginye.ddns.net","OPPOReno2","ilovematy","1026");
+	postfunc("imaginye.ddns.net","OPPOReno2","ilovematy","1026");/*
 	while(1){
 		it++;
 		sprintf(cad,"IT %d\r\n",(int)it);
 		res=buff->puts(buff,(BUFF_ITEM_t *)cad,strlen(cad));
 		vTaskDelay(10000/portTICK_RATE_MS );
 
-	}
+	}*/
 }
 
 void Task_Receive( void *pvParameters ){

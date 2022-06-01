@@ -1,2 +1,2 @@
-tareas_auxiliares.c:31:6:Task_DMA	32	static,ignoring_inline_asm
-tareas_auxiliares.c:100:6:Task_Display	24	static
+../Core/Src/tareas_auxiliares.c:31:6:Task_DMA	32	static,ignoring_inline_asm
+../Core/Src/tareas_auxiliares.c:100:6:Task_Display	24	static
